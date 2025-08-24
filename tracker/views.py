@@ -1,10 +1,12 @@
 from django.contrib import messages
 from django.shortcuts import redirect, render
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 from tracker.models import CurrentBalance, TrackingHistory
 
 # Create your views here.
+@login_required(login_url='/login')
 def index(request):
     if request.method == 'POST':
         description = request.POST.get('description')
@@ -38,7 +40,7 @@ def index(request):
     # Handle form submission here
     return render(request, "index.html", context)
 
-
+@login_required(login_url='/login')
 def delete_transaction(request, id):
     current_balance, _ = CurrentBalance.objects.get_or_create(id=1)
     transaction=TrackingHistory.objects.get(id=id)
@@ -46,6 +48,11 @@ def delete_transaction(request, id):
     current_balance.save()
     transaction.delete()
     return redirect("/")
+
+def logout_view(request):
+    logout(request)
+    messages.success(request, "Logged out successfully")
+    return redirect("/login")
 
 def login_view(request):
     if request.method == 'POST':
