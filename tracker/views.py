@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.shortcuts import redirect, render
-
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login
 from tracker.models import CurrentBalance, TrackingHistory
 
 # Create your views here.
@@ -45,3 +46,41 @@ def delete_transaction(request, id):
     current_balance.save()
     transaction.delete()
     return redirect("/")
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = User.objects.filter(username = username)
+        if not user.exists():
+            messages.success(request, "User Name not found")
+            return redirect("/login")
+        user = authenticate(username=username, password=password)
+        if not user:
+            messages.success(request, "Invalid credentials/ Password is incorrect")
+            return redirect("/login")
+        login(request, user)
+        messages.success(request, "Logged in successfully")
+        return redirect("/")
+    return render(request, "login.html")
+
+def register_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        password = request.POST.get('password')
+        user = User.objects.filter(username = username)
+        if user.exists():
+            messages.success(request, "User Name already exists. Create new User Name")
+            return redirect("/register")
+        user=User.objects.create(
+            username=username, 
+            first_name=first_name, 
+            last_name=last_name
+            )
+        user.set_password(password)
+        user.save()
+        messages.success(request, "User created successfully. Please login.")
+        return redirect("/login")
+    return render(request, "register.html")
